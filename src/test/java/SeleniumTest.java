@@ -12,7 +12,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-public class FixedTest {
+public class SeleniumTest {
     private WebDriver webDriver;
     private Process httpServerProcess;
 
