@@ -21,18 +21,25 @@ public class SeleniumTest {
         // Suppress Selenium warnings
         java.util.logging.Logger.getLogger("org.openqa.selenium").setLevel(java.util.logging.Level.OFF);
 
-        // Find chromedriver
+        // Find chromedriver (Linux and Windows paths)
         String[] driverPaths = {
+            //Linux / Max paths
             "/usr/bin/chromedriver",
             "/usr/local/bin/chromedriver",
             "/snap/bin/chromedriver",
-            System.getProperty("user.home") + "/.cache/selenium/chromedriver/linux64/chromedriver",
-            "/opt/chromedriver/chromedriver"
+            "./driver/chromedriver",
+            "/opt/chromedriver/chromedriver",
+            //Windows paths
+            ".\\driver\\chromedriver.exe",
+            "C:\\chromedriver\\chromedriver.exe",
+            "C:\\Program Files\\chromedriver\\chromedriver.exe",
+            System.getenv("USERPROFILE") + "\\chromedriver.exe",
+            System.getenv("LOCALAPPDATA") + "\\chromedriver\\chromedriver.exe"
         };
         for (String path : driverPaths) {
+            if (path == null) continue;
             File f = new File(path);
             if (f.exists() && f.canExecute()) {
-                // System.out.println("Found chromedriver: " + path);
                 System.setProperty("webdriver.chrome.driver", path);
                 break;
             }
@@ -40,16 +47,20 @@ public class SeleniumTest {
 
         ChromeOptions options = new ChromeOptions();
         
-        // Find and set Chrome binary
+        // Find and set Chrome binary (Linux and Windows paths)
         String[] chromePaths = {
             "/usr/bin/chromium-browser",
             "/usr/bin/chromium", 
             "/usr/bin/google-chrome",
-            "/snap/bin/chromium"
+            "/snap/bin/chromium",
+            "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+            System.getenv("LOCALAPPDATA") + "\\Google\\Chrome\\Application\\chrome.exe",
+            System.getenv("PROGRAMFILES") + "\\Google\\Chrome\\Application\\chrome.exe"
         };
         for (String path : chromePaths) {
+            if (path == null) continue;
             if (new File(path).exists()) {
-                // System.out.println("Found Chrome binary: " + path);
                 options.setBinary(path);
                 break;
             }
@@ -73,7 +84,6 @@ public class SeleniumTest {
         File htmlFile = new File("src/main/StyledPage.html").getCanonicalFile();
         String htmlUrl = startHttpServer(htmlFile);
         
-        // System.out.println("Navigating to: " + htmlUrl);
         webDriver.get(htmlUrl);
 
         new WebDriverWait(webDriver, Duration.ofSeconds(10))
@@ -86,15 +96,6 @@ public class SeleniumTest {
             "document.body.offsetHeight;" + 
             "document.body.style.display='block';"
         );
-
-        // System.out.println("Current URL: " + webDriver.getCurrentUrl());
-        // String pageSource = webDriver.getPageSource();
-        // String[] lines = pageSource.split("\n");
-        // int maxLines = Math.min(100, lines.length);
-        // System.out.println("Page source (first " + maxLines + " lines):");
-        // for (int i = 0; i < maxLines; i++) {
-        //     System.out.println(lines[i]);
-        // }
     }
 
     private String startHttpServer(File htmlFile) throws Exception {
@@ -102,9 +103,12 @@ public class SeleniumTest {
         String directory = htmlFile.getParent();
         String fileName = htmlFile.getName();
 
-        // System.out.println("Starting HTTP server on port " + port + " in directory: " + directory);
+        // Use 'python' on Windows, 'python3' on Linux/Mac
+        String pythonCmd = System.getProperty("os.name").toLowerCase().contains("win") 
+            ? "python" 
+            : "python3";
 
-        ProcessBuilder pb = new ProcessBuilder("python3", "-m", "http.server", String.valueOf(port));
+        ProcessBuilder pb = new ProcessBuilder(pythonCmd, "-m", "http.server", String.valueOf(port));
         pb.directory(new File(directory));
         pb.redirectErrorStream(true);
 
@@ -129,7 +133,6 @@ public class SeleniumTest {
                 connection.disconnect();
 
                 if (responseCode == 200) {
-                    // System.out.println("HTTP server ready: " + url);
                     return url;
                 }
             } catch (Exception e) {
