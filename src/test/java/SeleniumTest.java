@@ -3,15 +3,14 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 public class SeleniumTest {
     private WebDriver webDriver;
@@ -20,25 +19,23 @@ public class SeleniumTest {
     @BeforeEach
     public void setUp() throws Exception {
         // Suppress Selenium warnings
-        java.util.logging.Logger.getLogger("org.openqa.selenium")
-                .setLevel(java.util.logging.Level.OFF);
+        java.util.logging.Logger.getLogger("org.openqa.selenium").setLevel(java.util.logging.Level.OFF);
 
         // Find chromedriver (Linux and Windows paths)
         String[] driverPaths = {
-                // Linux / Mac paths
-                "/usr/bin/chromedriver",
-                "/usr/local/bin/chromedriver",
-                "/snap/bin/chromedriver",
-                "./driver/chromedriver",
-                "/opt/chromedriver/chromedriver",
-                // Windows paths
-                ".\\driver\\chromedriver.exe",
-                "C:\\chromedriver\\chromedriver.exe",
-                "C:\\Program Files\\chromedriver\\chromedriver.exe",
-                (System.getenv("USERPROFILE") == null ? null : System.getenv("USERPROFILE") + "\\chromedriver.exe"),
-                (System.getenv("LOCALAPPDATA") == null ? null : System.getenv("LOCALAPPDATA") + "\\chromedriver\\chromedriver.exe")
+            //Linux / Max paths
+            "/usr/bin/chromedriver",
+            "/usr/local/bin/chromedriver",
+            "/snap/bin/chromedriver",
+            "./driver/chromedriver",
+            "/opt/chromedriver/chromedriver",
+            //Windows paths
+            ".\\driver\\chromedriver.exe",
+            "C:\\chromedriver\\chromedriver.exe",
+            "C:\\Program Files\\chromedriver\\chromedriver.exe",
+            System.getenv("USERPROFILE") + "\\chromedriver.exe",
+            System.getenv("LOCALAPPDATA") + "\\chromedriver\\chromedriver.exe"
         };
-
         for (String path : driverPaths) {
             if (path == null) continue;
             File f = new File(path);
@@ -49,19 +46,18 @@ public class SeleniumTest {
         }
 
         ChromeOptions options = new ChromeOptions();
-
+        
         // Find and set Chrome binary (Linux and Windows paths)
         String[] chromePaths = {
-                "/usr/bin/chromium-browser",
-                "/usr/bin/chromium",
-                "/usr/bin/google-chrome",
-                "/snap/bin/chromium",
-                "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-                "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-                (System.getenv("LOCALAPPDATA") == null ? null : System.getenv("LOCALAPPDATA") + "\\Google\\Chrome\\Application\\chrome.exe"),
-                (System.getenv("PROGRAMFILES") == null ? null : System.getenv("PROGRAMFILES") + "\\Google\\Chrome\\Application\\chrome.exe")
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium", 
+            "/usr/bin/google-chrome",
+            "/snap/bin/chromium",
+            "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+            System.getenv("LOCALAPPDATA") + "\\Google\\Chrome\\Application\\chrome.exe",
+            System.getenv("PROGRAMFILES") + "\\Google\\Chrome\\Application\\chrome.exe"
         };
-
         for (String path : chromePaths) {
             if (path == null) continue;
             if (new File(path).exists()) {
@@ -70,41 +66,35 @@ public class SeleniumTest {
             }
         }
 
-        // Browser arguments (commit/CI-safe + file:// compatible)
         options.addArguments(
-                "--headless=new",
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--disable-features=VizDisplayCompositor",
-                "--use-gl=swiftshader",
-                "--allow-file-access-from-files",
-                "--disable-web-security",
-                "--user-data-dir=/tmp/chrome-test-" + System.currentTimeMillis()
+            "--headless",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-features=VizDisplayCompositor",
+            "--use-gl=swiftshader",
+            "--allow-file-access-from-files",
+            "--disable-web-security",
+            "--user-data-dir=/tmp/chrome-test-" + System.currentTimeMillis()
         );
 
-        // Create the WebDriver ONCE
         webDriver = new ChromeDriver(options);
 
-        // Try Python HTTP server first, fall back to file:// if unavailable
+        // Start Python HTTP server
         File htmlFile = new File("src/main/StyledPage.html").getCanonicalFile();
-        try {
-            String htmlUrl = startHttpServer(htmlFile);
-            webDriver.get(htmlUrl);
-        } catch (Exception e) {
-            System.out.println("HTTP server unavailable, falling back to file://");
-            webDriver.get(htmlFile.toURI().toString());
-        }
+        String htmlUrl = startHttpServer(htmlFile);
+        
+        webDriver.get(htmlUrl);
 
         new WebDriverWait(webDriver, Duration.ofSeconds(10))
-                .until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+            .until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
 
-        // Fix occasional headless rendering issues
-        Thread.sleep(1500);
+        // Fix headless rendering issues
+        Thread.sleep(2000);
         ((JavascriptExecutor) webDriver).executeScript(
-                "document.body.style.display='none';" +
-                        "document.body.offsetHeight;" +
-                        "document.body.style.display='block';"
+            "document.body.style.display='none';" +
+            "document.body.offsetHeight;" + 
+            "document.body.style.display='block';"
         );
     }
 
@@ -114,15 +104,16 @@ public class SeleniumTest {
         String fileName = htmlFile.getName();
 
         // Use 'python' on Windows, 'python3' on Linux/Mac
-        String os = System.getProperty("os.name").toLowerCase();
-        String pythonCmd = os.contains("win") ? "python" : "python3";
+        String pythonCmd = System.getProperty("os.name").toLowerCase().contains("win") 
+            ? "python" 
+            : "python3";
 
         ProcessBuilder pb = new ProcessBuilder(pythonCmd, "-m", "http.server", String.valueOf(port));
         pb.directory(new File(directory));
         pb.redirectErrorStream(true);
 
         httpServerProcess = pb.start();
-        Thread.sleep(1500);
+        Thread.sleep(2000);
 
         if (!httpServerProcess.isAlive()) {
             throw new RuntimeException("HTTP server failed to start");
@@ -148,7 +139,7 @@ public class SeleniumTest {
                 if (i == 9) {
                     throw new RuntimeException("HTTP server not responding: " + e.getMessage());
                 }
-                Thread.sleep(400);
+                Thread.sleep(500);
             }
         }
 
